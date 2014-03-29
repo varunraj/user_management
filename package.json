@@ -1,6 +1,6 @@
 {
-    "name": "User Manager",
-    "version": "0.1",
+    "name": "User_Manager",
+    "version": "0.0.1",
     "private": true,
     "dependencies":{
         "express": "*"
