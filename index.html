@@ -11,16 +11,100 @@
             <hr/>
             <div class = "page"></div>
         </div>
+        <script type ="text/template" id ="user-list-template">
+            <table class = "table striped">
+                <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Age</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% _.each(users, function(user){ %>
+                        <tr>
+                            <td><%= user.get("firstname")%> </td>
+                            <td><%= user.get("lastname")%> </td>
+                            <td><%= user.get("age")%> </td>
+                            <td> </td>
+                        </tr>
+                    <% }); %>
+
+                </tbody>
+
+
+
+
+
+            </table>
+
+
+        </script>
+
+
+
+
     <script src ="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"> </script>
     <script src ="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
     <script src ="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
 
-<!--Add your backbone code in the below script>>>>>> -->
+<!--Add your backbone code in the below script -->
 
     <script>
 
+        // Create an ajax pre filter to send all server calls to a remote server rather than this domain
+
+        $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
+            options.url = 'http://backbonejs-beginner.herokuapp.com' + options.url;
+        // We don't need to do this if we are serving the REST API from same domain.
+        });
+
+        var Users = Backbone.Collection.extend({
+            url:'/users'
+        })
 
 
+        // Create the backbone view for user list
+
+        var UserList = Backbone.View.extend({
+            el:".page",      // View is attached to the DOM class page.
+
+            render: function(){
+              var users = new Users();
+              var that = this;
+              users.fetch({
+                    success:function(users){
+                        var template = _.template($('#user-list-template').html(), {users: users.models})
+                        that.$el.html(template)
+                    }
+
+              })
+            },
+        })
+
+
+
+
+
+        // Create the backbone router
+        var Router = Backbone.Router.extend({
+            routes:{
+                '':'home'   // empty string represents home /
+            }
+        })
+
+
+        var userList = new UserList();
+
+        var router = new Router();
+        router.on('route:home', function(){
+            userList.render();
+        })
+
+        Backbone.history.start();
+
+        // start from 29.10
 
     </script>
 
