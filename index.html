@@ -30,7 +30,7 @@
                             <td><%= user.get("firstname")%> </td>
                             <td><%= user.get("lastname")%> </td>
                             <td><%= user.get("age")%> </td>
-                            <td> </td>
+                            <td><a href ="#/edit/<%= user.id %>" class ="btn btn-danger"> Edit </a> </td>
                         </tr>
                     <% }); %>
 
@@ -39,31 +39,34 @@
         </script>
 
         <script type ="text/template" id = "Edit-user-template">
-            <form class="form-horizontal">
+            <form class="form-horizontal edit-user-form">
 
-                <legend> Create User</legend>
+                <legend><%= user? 'Update ': 'Create ' %>User</legend>
                 <div class="control-group">
                     <label class="control-label">First Name</label>
                     <div class="controls">
-                        <input type = "text" name ='firstname' placeholder="first name">
+                        <input type = "text" name ='firstname' value="<%=user? user.get('firstname'): '' %>">
                     </div>
                 <div class="control-group">
                     <label class="control-label">Last Name</label>
                     <div class="controls">
-                        <input type = "text" name ='lastname'placeholder="last name">
+                        <input type = "text" name ='lastname' value="<%=user? user.get('lastname'): '' %>">
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label">Age</label>
                     <div class="controls">
-                        <input type = "text" name ='age' placeholder="age">
+                        <input type = "text" name ='age' value="<%=user? user.get('age'): '' %>">
                     </div>
                 <hr/>
-                <button type ="submit" class ="btn"> Create </button>
 
+                <button type ="submit" class ="btn"> <%= user? 'Update ': 'Create ' %> </button>
+
+                <% if (user) { %>
+                    <input type ="hidden" name ="id" value="<%= user.id %>" />
+                    <button class ="btn btn-danger delete" type ="button">Delete</button>
+                <% } %>
             </form>
-
-
         </script>
 
 
@@ -73,8 +76,8 @@
 
 <!--Add your backbone code in the below script -->
 
-    <script>
 
+    <script>
         // Create an ajax pre filter to send all server calls to a remote server rather than this domain
 
         $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
@@ -82,10 +85,36 @@
         // We don't need to do this if we are serving the REST API from same domain.
         });
 
+        // jquery form serialzation code. To convert the data from form to serialized json object
+
+        $.fn.serializeObject = function() {
+            var o = {};
+            var a = this.serializeArray();
+            $.each(a, function() {
+                if (o[this.name] !== undefined) {
+                    if (!o[this.name].push) {
+                        o[this.name] = [o[this.name]];
+                    }
+                    o[this.name].push(this.value || '');
+                } else {
+                    o[this.name] = this.value || '';
+                }
+            });
+            return o;
+        };
+
+        // Backbone collection to get all the users from server
+
         var Users = Backbone.Collection.extend({
             url:'/users'
         })
 
+        // Backbone model for user
+
+        var User = Backbone.Model.extend({
+            urlRoot:'/users'      // Specify a urlRoot if you're using a model outside of a collection, to enable the
+                                  // default url function to generate URLs based on the model id. "[urlRoot]/id"
+        })
 
         // Create the backbone view for user list
 
@@ -100,54 +129,79 @@
                         var template = _.template($('#user-list-template').html(), {users: users.models})
                         that.$el.html(template)
                     }
-
               })
             },
         })
-
-
         var EditUser = Backbone.View.extend({
             el:".page",
-            render: function(){
-                var template = _.template($('#Edit-user-template').html(), {})
-                this.$el.html(template)
-
+            render: function(options){    // id passed from edit will be contained in options object
+                that = this;
+                if(options.id){
+                    // If Id is present, we need to get the date from sever and populate the vallues
+                    that.user = new User({id:options.id});
+                    that.user.fetch({
+                        success: function(user){
+                            var template = _.template($('#Edit-user-template').html(), {user:user});
+                            that.$el.html(template)
+                        }
+                    })
+                }
+                else { // if no id, presnt the blank form
+                    var template = _.template($('#Edit-user-template').html(), {user:null});
+                    this.$el.html(template)
+                }
+            },
+            events: {
+                'submit .edit-user-form':'saveUser',
+                'click .delete': 'deleteUser'
+            },
+            saveUser: function(ev){
+                // We can get the form using the jquery current target
+                var userDetails = $(ev.currentTarget).serializeObject(); // We used the jquery serializer to convert
+                                                                        // form data
+                var user = new User();
+                user.save(userDetails,{
+                    success: function(user){
+                        router.navigate('', {trigger:true}); // After the new user is created,we want to send back to
+                                                             // the home page.
+                    }
+                });
+                //console.log(userDetails);
+                return false; // we are asking the browser to disable native behavior of refreshing the page when form is
+                             // submitted
+            },
+            deleteUser:function(ev){
+                that.user.destroy({
+                    success:function(){
+                        router.navigate('', {trigger:true});
+                    }
+                });
+                return false;
             }
-
-        })
-
+        });
 
         // Create the backbone router
+
         var Router = Backbone.Router.extend({
             routes:{
                 '':'home',   // empty string represents home /
-                'new':'editUser'
+                'new':'editUser',
+                'edit/:id':'editUser'
             }
         })
 
-
         var userList = new UserList();
         var editUser = new EditUser();
-
         var router = new Router();
         router.on('route:home', function(){
             userList.render();
         })
 
-        router.on('route:editUser', function(){
-            editUser.render();
-
+        router.on('route:editUser', function(id){
+            editUser.render({id:id}); // If we get an id ( for edit ), pass that to render
         })
 
-
         Backbone.history.start();
-
-        // start from 35.58
-
     </script>
-
-
     </body>
-
-
 </html>
