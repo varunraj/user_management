@@ -12,7 +12,10 @@
             <div class = "page"></div>
         </div>
         <script type ="text/template" id ="user-list-template">
-            <table class = "table striped">
+
+            <a href ="#/new" class = "btn btn-primary">New User</a>
+            <hr/>
+            <table class = "table table-striped">
                 <thead>
                     <tr>
                         <th>First Name</th>
@@ -32,17 +35,36 @@
                     <% }); %>
 
                 </tbody>
-
-
-
-
-
             </table>
+        </script>
+
+        <script type ="text/template" id = "Edit-user-template">
+            <form class="form-horizontal">
+
+                <legend> Create User</legend>
+                <div class="control-group">
+                    <label class="control-label">First Name</label>
+                    <div class="controls">
+                        <input type = "text" name ='firstname' placeholder="first name">
+                    </div>
+                <div class="control-group">
+                    <label class="control-label">Last Name</label>
+                    <div class="controls">
+                        <input type = "text" name ='lastname'placeholder="last name">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Age</label>
+                    <div class="controls">
+                        <input type = "text" name ='age' placeholder="age">
+                    </div>
+                <hr/>
+                <button type ="submit" class ="btn"> Create </button>
+
+            </form>
 
 
         </script>
-
-
 
 
     <script src ="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"> </script>
@@ -84,27 +106,43 @@
         })
 
 
+        var EditUser = Backbone.View.extend({
+            el:".page",
+            render: function(){
+                var template = _.template($('#Edit-user-template').html(), {})
+                this.$el.html(template)
 
+            }
+
+        })
 
 
         // Create the backbone router
         var Router = Backbone.Router.extend({
             routes:{
-                '':'home'   // empty string represents home /
+                '':'home',   // empty string represents home /
+                'new':'editUser'
             }
         })
 
 
         var userList = new UserList();
+        var editUser = new EditUser();
 
         var router = new Router();
         router.on('route:home', function(){
             userList.render();
         })
 
+        router.on('route:editUser', function(){
+            editUser.render();
+
+        })
+
+
         Backbone.history.start();
 
-        // start from 29.10
+        // start from 35.58
 
     </script>
 
